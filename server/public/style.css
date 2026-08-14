@@ -1,0 +1,195 @@
+:root {
+  --bg: #14151a;
+  --panel: #1d1f27;
+  --panel-border: #2c2f3a;
+  --text: #e8e9ee;
+  --text-dim: #9498a6;
+  --accent: #6fb1ff;
+  --ok: #57c785;
+  --stale: #d9704f;
+  --shiny: #f2c94c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.app-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.app-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+}
+
+.status-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.player-status {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+}
+
+.player-status.connected {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.player-status.stale {
+  color: var(--stale);
+  border-color: var(--stale);
+}
+
+.run-id {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+}
+
+main {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+h2 {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.75rem;
+}
+
+.linked-pairs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pair-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+}
+
+.pair-card .route-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  width: 100%;
+  text-align: center;
+  margin-bottom: 0.35rem;
+}
+
+.pair-card .mon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 70px;
+}
+
+.pair-card .mon img {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.pair-card .mon .name {
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.pair-card .link-icon {
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.pair-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.shiny .name {
+  color: var(--shiny);
+}
+
+.route-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.route-table th, .route-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 0.9rem;
+}
+
+.route-table th {
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.route-table tr:last-child td {
+  border-bottom: none;
+}
+
+.route-col {
+  width: 30%;
+}
+
+.player-col {
+  width: 35%;
+}
+
+.mon-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mon-cell img {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+.mon-cell .boxed {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+}
+
+.empty-cell {
+  color: var(--text-dim);
+}
+
+.empty-note {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Soul Link Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Soul Link Tracker</h1>
+    <div class="status-row">
+      <span id="conn-p1" class="player-status">Player 1</span>
+      <span id="conn-p2" class="player-status">Player 2</span>
+      <span id="run-id" class="run-id"></span>
+    </div>
+  </header>
+
+  <main>
+    <section id="linked-section">
+      <h2>Linked Pairs &mdash; currently in party</h2>
+      <div id="linked-pairs" class="linked-pairs"></div>
+      <p id="linked-empty" class="empty-note">No active linked pairs yet.</p>
+    </section>
+
+    <section id="routes-section">
+      <h2>Route Log</h2>
+      <table class="route-table">
+        <thead>
+          <tr>
+            <th class="route-col">Route</th>
+            <th class="player-col">Player 1</th>
+            <th class="player-col">Player 2</th>
+          </tr>
+        </thead>
+        <tbody id="route-rows"></tbody>
+      </table>
+      <p id="routes-empty" class="empty-note">No catches recorded yet.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
