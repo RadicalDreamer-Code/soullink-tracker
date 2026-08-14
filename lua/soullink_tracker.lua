@@ -88,6 +88,7 @@ local previousBattleOutcome = 0
 local previousMapId = nil
 local currentRoute = { mapId = 0, name = "Unknown" }
 local currentParty = {}
+local knownPartyPersonalities = {}
 
 local FULL_PARTY_POLL_INTERVAL = 30 -- frames
 local framesSinceFullPoll = FULL_PARTY_POLL_INTERVAL -- force an immediate read on first tick
@@ -104,8 +105,40 @@ local function updateRoute()
 	end
 end
 
+-- Records a mon that appeared in the party without going through
+-- recordCatch() (i.e. gBattleOutcome never hit BATTLE_OUTCOME_CAUGHT):
+-- starter selection, in-game gifts, and trades all land here since none of
+-- them are wild battles.
+local function recordReceived(mon)
+	eventSequence = eventSequence + 1
+	table.insert(events, {
+		seq = eventSequence,
+		type = "received",
+		timestamp = nowIso8601(),
+		route = { mapId = currentRoute.mapId, name = currentRoute.name },
+		pokemon = {
+			personality = mon.personality,
+			species = mon.species,
+			nickname = mon.nickname,
+			level = mon.level,
+			nature = mon.nature,
+			isShiny = mon.isShiny,
+			ivs = mon.ivs,
+		},
+	})
+	print(("Received recorded: species #%d, level %d, location %s")
+		:format(mon.species, mon.level, currentRoute.name))
+end
+
 local function refreshParty()
-	currentParty = PokemonReader.readParty(ADDR_PSTATS)
+	local newParty = PokemonReader.readParty(ADDR_PSTATS)
+	for _, mon in ipairs(newParty) do
+		if not knownPartyPersonalities[mon.personality] then
+			recordReceived(mon)
+			knownPartyPersonalities[mon.personality] = true
+		end
+	end
+	currentParty = newParty
 end
 
 local function recordCatch()
@@ -115,6 +148,9 @@ local function recordCatch()
 	if personality == 0 and otid == 0 then return end
 
 	local caughtMon = PokemonReader.read(ADDR_ESTATS, personality)
+	-- Mark known before the next refreshParty() so this mon isn't also
+	-- reported as "received" once it lands in the party.
+	knownPartyPersonalities[personality] = true
 	eventSequence = eventSequence + 1
 	table.insert(events, {
 		seq = eventSequence,
