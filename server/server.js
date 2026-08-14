@@ -6,7 +6,7 @@ const chokidar = require('chokidar');
 const { WebSocketServer } = require('ws');
 const { RunManager } = require('./run');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3070;
 const DATA_STATE_DIR = path.join(__dirname, '..', 'data', 'state');
 const DATA_RUNS_DIR = path.join(__dirname, '..', 'data', 'runs');
 const BROADCAST_INTERVAL_MS = 2000; // also catches staleness with no file-change events
