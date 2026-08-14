@@ -4,12 +4,13 @@ const SPECIES_NAMES = require('./species_names');
 const NATURE_NAMES = require('./nature_names');
 
 const CSV_HEADER = [
-  'run_id', 'seq', 'player_id', 'timestamp_utc', 'route_map_id', 'route_name',
+  'run_id', 'seq', 'player_id', 'event_type', 'timestamp_utc', 'route_map_id', 'route_name',
   'species_national_dex_id', 'species_name', 'nickname', 'level', 'nature_id',
   'is_shiny', 'iv_hp', 'iv_atk', 'iv_def', 'iv_spa', 'iv_spd', 'iv_spe', 'personality_id',
 ].join(',');
 
 const STALE_AFTER_MS = 5000;
+const TRACKED_EVENT_TYPES = new Set(['catch', 'received']);
 
 function csvField(value) {
   const s = String(value);
@@ -67,9 +68,9 @@ class RunState {
   }
 
   // Ingests a freshly-read player state JSON (already parsed). Appends any
-  // genuinely new catch events to the CSV, deduped by (playerId, personality)
-  // rather than the Lua-side seq counter, since a Lua script reload resets
-  // seq but personality is durable across reloads.
+  // genuinely new catch/received events to the CSV, deduped by
+  // (playerId, personality) rather than the Lua-side seq counter, since a
+  // Lua script reload resets seq but personality is durable across reloads.
   ingestPlayerState(playerId, rawState) {
     this.players[playerId] = rawState;
     this.lastUpdateAt[playerId] = Date.now();
@@ -77,7 +78,7 @@ class RunState {
     const events = Array.isArray(rawState.events) ? rawState.events : [];
     let wroteRow = false;
     for (const event of events) {
-      if (event.type !== 'catch' || !event.pokemon) continue;
+      if (!TRACKED_EVENT_TYPES.has(event.type) || !event.pokemon) continue;
       const key = eventKey(playerId, event.pokemon.personality);
       if (this.seenEventKeys.has(key)) continue;
       this.seenEventKeys.add(key);
@@ -96,6 +97,7 @@ class RunState {
       this.runId,
       event.seq,
       playerId,
+      event.type,
       event.timestamp,
       event.route ? event.route.mapId : '',
       event.route ? event.route.name : '',
@@ -164,7 +166,7 @@ class RunState {
       }
 
       for (const event of raw.events) {
-        if (event.type !== 'catch' || !event.route) continue;
+        if (!TRACKED_EVENT_TYPES.has(event.type) || !event.route) continue;
         const routeName = event.route.name;
 
         if (!routeOrder.has(routeName) || event.timestamp < routeOrder.get(routeName).firstSeenAt) {
