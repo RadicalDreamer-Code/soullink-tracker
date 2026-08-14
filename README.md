@@ -38,13 +38,13 @@ full design writeup (architecture, schemas, phase rationale).
    npm start
    ```
    This watches `data/state/` and serves the dashboard at
-   `http://localhost:3000`.
+   `http://localhost:3070`.
 
 4. **Load the tracker in each BizHawk instance:**
    - Player 1's BizHawk: Lua Console → open `lua/player1.lua`
    - Player 2's BizHawk: Lua Console → open `lua/player2.lua`
 
-5. **Open the dashboard** at `http://localhost:3000` in a browser. It updates
+5. **Open the dashboard** at `http://localhost:3070` in a browser. It updates
    live as either player catches something.
 
 ## Run data
@@ -56,7 +56,7 @@ full design writeup (architecture, schemas, phase rationale).
 - `data/runs/current-run.json` — pointer to the active run.
 
 To start a fresh run (new CSV, resets linking state) without restarting the
-server: `curl -X POST http://localhost:3000/api/runs/new`.
+server: `curl -X POST http://localhost:3070/api/runs/new`.
 
 ## Notes
 
