@@ -89,6 +89,7 @@ local previousMapId = nil
 local currentRoute = { mapId = 0, name = "Unknown" }
 local currentParty = {}
 local knownPartyPersonalities = {}
+local knownFaintedPersonalities = {}
 
 local FULL_PARTY_POLL_INTERVAL = 30 -- frames
 local framesSinceFullPoll = FULL_PARTY_POLL_INTERVAL -- force an immediate read on first tick
@@ -130,6 +131,32 @@ local function recordReceived(mon)
 		:format(mon.species, mon.level, currentRoute.name))
 end
 
+-- Records a party mon found at 0 HP. Soul Link/Nuzlocke rules treat a
+-- fainted mon as permanently dead even after it's healed back up at a
+-- Pokemon Center, so this is a one-time edge-triggered event -- the
+-- durable "is this mon dead" answer lives in knownFaintedPersonalities,
+-- not in the mon's current HP.
+local function recordFaint(mon)
+	eventSequence = eventSequence + 1
+	table.insert(events, {
+		seq = eventSequence,
+		type = "faint",
+		timestamp = nowIso8601(),
+		route = { mapId = currentRoute.mapId, name = currentRoute.name },
+		pokemon = {
+			personality = mon.personality,
+			species = mon.species,
+			nickname = mon.nickname,
+			level = mon.level,
+			nature = mon.nature,
+			isShiny = mon.isShiny,
+			ivs = mon.ivs,
+		},
+	})
+	print(("Faint recorded: species #%d, level %d, nickname %s")
+		:format(mon.species, mon.level, mon.nickname))
+end
+
 local function refreshParty()
 	local newParty = PokemonReader.readParty(ADDR_PSTATS)
 	for _, mon in ipairs(newParty) do
@@ -137,6 +164,11 @@ local function refreshParty()
 			recordReceived(mon)
 			knownPartyPersonalities[mon.personality] = true
 		end
+		if mon.currentHp == 0 and not knownFaintedPersonalities[mon.personality] then
+			recordFaint(mon)
+			knownFaintedPersonalities[mon.personality] = true
+		end
+		mon.isDefeated = knownFaintedPersonalities[mon.personality] == true
 	end
 	currentParty = newParty
 end
