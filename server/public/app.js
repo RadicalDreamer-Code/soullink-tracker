@@ -13,13 +13,16 @@ function monCell(mon) {
     return '<span class="empty-cell">&mdash;</span>';
   }
   const shinyClass = mon.isShiny ? ' shiny' : '';
-  const boxedNote = mon.inParty ? '' : '<div class="boxed">boxed/gone</div>';
+  const defeatedClass = mon.isDefeated ? ' defeated' : '';
+  const notes = [];
+  if (mon.isDefeated) notes.push('<div class="defeated-note">&#9760; defeated</div>');
+  if (!mon.inParty) notes.push('<div class="boxed">boxed/gone</div>');
   return `
-    <div class="mon-cell${shinyClass}">
+    <div class="mon-cell${shinyClass}${defeatedClass}">
       <img src="${iconUrl(mon.species)}" alt="" />
       <div>
         <div class="name">${escapeHtml(mon.nickname)} <span class="empty-cell">Lv.${mon.level}</span></div>
-        ${boxedNote}
+        ${notes.join('')}
       </div>
     </div>
   `;

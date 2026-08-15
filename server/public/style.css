@@ -185,6 +185,16 @@ h2 {
   font-size: 0.7rem;
 }
 
+.mon-cell.defeated img {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.mon-cell .defeated-note {
+  color: var(--stale);
+  font-size: 0.7rem;
+}
+
 .empty-cell {
   color: var(--text-dim);
 }

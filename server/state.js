@@ -10,15 +10,20 @@ const CSV_HEADER = [
 ].join(',');
 
 const STALE_AFTER_MS = 5000;
-const TRACKED_EVENT_TYPES = new Set(['catch', 'received']);
+// catch/received represent a mon *arriving* on a route/location and drive
+// the route table's per-route association; faint doesn't (it would
+// otherwise reassign a mon's route to wherever it later died), so it's
+// only ever consulted for CSV history and the derived isDefeated flag.
+const ROUTE_EVENT_TYPES = new Set(['catch', 'received']);
+const CSV_EVENT_TYPES = new Set(['catch', 'received', 'faint']);
 
 function csvField(value) {
   const s = String(value);
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-function eventKey(playerId, personality) {
-  return `${playerId}:${personality}`;
+function eventKey(playerId, personality, type) {
+  return `${playerId}:${personality}:${type}`;
 }
 
 class RunState {
@@ -50,7 +55,7 @@ class RunState {
       const snapshot = JSON.parse(fs.readFileSync(this.snapshotPath, 'utf8'));
       this.players = snapshot.players || this.players;
       this.seenEventKeys = new Set(snapshot.seenEventKeys || []);
-      console.log(`[state] restored snapshot for run ${this.runId} (${this.seenEventKeys.size} known catches)`);
+      console.log(`[state] restored snapshot for run ${this.runId} (${this.seenEventKeys.size} known events)`);
     } catch (err) {
       console.warn(`[state] failed to load snapshot, starting fresh: ${err.message}`);
     }
@@ -68,9 +73,11 @@ class RunState {
   }
 
   // Ingests a freshly-read player state JSON (already parsed). Appends any
-  // genuinely new catch/received events to the CSV, deduped by
-  // (playerId, personality) rather than the Lua-side seq counter, since a
-  // Lua script reload resets seq but personality is durable across reloads.
+  // genuinely new catch/received/faint events to the CSV, deduped by
+  // (playerId, personality, type) rather than the Lua-side seq counter,
+  // since a Lua script reload resets seq but personality is durable across
+  // reloads. Type is part of the key so a mon that's caught and later
+  // faints gets both rows instead of the faint being dropped as a dupe.
   ingestPlayerState(playerId, rawState) {
     this.players[playerId] = rawState;
     this.lastUpdateAt[playerId] = Date.now();
@@ -78,8 +85,8 @@ class RunState {
     const events = Array.isArray(rawState.events) ? rawState.events : [];
     let wroteRow = false;
     for (const event of events) {
-      if (!TRACKED_EVENT_TYPES.has(event.type) || !event.pokemon) continue;
-      const key = eventKey(playerId, event.pokemon.personality);
+      if (!CSV_EVENT_TYPES.has(event.type) || !event.pokemon) continue;
+      const key = eventKey(playerId, event.pokemon.personality, event.type);
       if (this.seenEventKeys.has(key)) continue;
       this.seenEventKeys.add(key);
       this._appendCsvRow(playerId, event);
@@ -137,7 +144,10 @@ class RunState {
     }
 
     const routes = this._deriveRoutes();
-    const linkedPairs = routes.filter((r) => r.player1 && r.player1.inParty && r.player2 && r.player2.inParty);
+    const linkedPairs = routes.filter((r) => (
+      r.player1 && r.player1.inParty && !r.player1.isDefeated
+      && r.player2 && r.player2.inParty && !r.player2.isDefeated
+    ));
 
     return {
       runId: this.runId,
@@ -151,10 +161,13 @@ class RunState {
   // checks whether that mon is still alive in the current party (in which
   // case its *current* species/level/nickname are shown, reflecting
   // evolution) or has been boxed/removed (in which case the catch-time
-  // snapshot is shown instead).
+  // snapshot is shown instead). Also flags mons that have ever fainted --
+  // permanently dead under Soul Link/Nuzlocke rules regardless of current
+  // HP or box status.
   _deriveRoutes() {
     const routeOrder = new Map(); // routeName -> { mapId, firstSeenAt }
     const perPlayerRouteCatch = { player1: new Map(), player2: new Map() };
+    const perPlayerFainted = { player1: new Set(), player2: new Set() };
 
     for (const playerId of ['player1', 'player2']) {
       const raw = this.players[playerId];
@@ -166,7 +179,10 @@ class RunState {
       }
 
       for (const event of raw.events) {
-        if (!TRACKED_EVENT_TYPES.has(event.type) || !event.route) continue;
+        if (event.type === 'faint' && event.pokemon) {
+          perPlayerFainted[playerId].add(event.pokemon.personality);
+        }
+        if (!ROUTE_EVENT_TYPES.has(event.type) || !event.route) continue;
         const routeName = event.route.name;
 
         if (!routeOrder.has(routeName) || event.timestamp < routeOrder.get(routeName).firstSeenAt) {
@@ -198,6 +214,7 @@ class RunState {
 
         const raw = this.players[playerId];
         const partyMon = (raw.party || []).find((m) => m.personality === event.pokemon.personality);
+        const isDefeated = perPlayerFainted[playerId].has(event.pokemon.personality);
 
         if (partyMon) {
           row[playerId] = {
@@ -207,6 +224,7 @@ class RunState {
             nickname: partyMon.nickname,
             isShiny: partyMon.isShiny,
             inParty: true,
+            isDefeated,
           };
         } else {
           row[playerId] = {
@@ -216,6 +234,7 @@ class RunState {
             nickname: event.pokemon.nickname,
             isShiny: event.pokemon.isShiny,
             inParty: false,
+            isDefeated,
           };
         }
       }
