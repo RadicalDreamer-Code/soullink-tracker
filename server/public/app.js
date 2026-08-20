@@ -119,5 +119,31 @@ function connectWebSocket() {
   });
 }
 
+let toastTimer = null;
+function showToast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('visible'), 3000);
+}
+
+document.getElementById('new-run-btn').addEventListener('click', async () => {
+  if (!confirm('Start a new run? The current run data will be preserved in its CSV, but the dashboard will reset.')) return;
+  try {
+    const res = await fetch('/api/runs/new', { method: 'POST' });
+    const data = await res.json();
+    showToast(`New run started: ${data.runId}`);
+  } catch (err) {
+    showToast('Failed to start new run.');
+  }
+});
+
 loadInitialState();
 connectWebSocket();
