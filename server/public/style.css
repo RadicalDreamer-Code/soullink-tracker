@@ -76,6 +76,41 @@ body {
   color: var(--bg);
 }
 
+.debug-toggle-btn {
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.debug-toggle-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.debug-toggle-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.debug-banner {
+  display: none;
+  background: var(--shiny);
+  color: var(--bg);
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem;
+}
+
+.debug-banner.visible {
+  display: block;
+}
+
 .toast {
   position: fixed;
   bottom: 1.5rem;
