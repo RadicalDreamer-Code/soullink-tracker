@@ -180,8 +180,9 @@ h2 {
 }
 
 .pair-card .mon img {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
   image-rendering: pixelated;
 }
 
@@ -273,4 +274,14 @@ h2 {
 .empty-note {
   color: var(--text-dim);
   font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .linked-pairs {
+    justify-content: center;
+  }
+
+  .pair-wrap {
+    align-items: center;
+  }
 }

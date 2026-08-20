@@ -2,6 +2,10 @@ function iconUrl(species) {
   return `icons/${species || 0}.gif`;
 }
 
+function animatedIconUrl(species) {
+  return `animated/${species || 0}.gif`;
+}
+
 function renderPlayerStatus(elId, player) {
   const el = document.getElementById(elId);
   el.classList.toggle('connected', !!(player && player.connected));
@@ -70,13 +74,13 @@ function renderLinkedPairs(linkedPairs) {
       <div class="route-label">${escapeHtml(pair.routeName)}</div>
       <div class="pair-card">
         <div class="mon${pair.player1.isShiny ? ' shiny' : ''}">
-          <img src="${iconUrl(pair.player1.species)}" alt="" />
+          <img src="${animatedIconUrl(pair.player1.species)}" alt="" />
           <span class="name">${escapeHtml(pair.player1.nickname)}</span>
           <span class="name">Lv.${pair.player1.level}</span>
         </div>
         <span class="link-icon">&#128279;</span>
         <div class="mon${pair.player2.isShiny ? ' shiny' : ''}">
-          <img src="${iconUrl(pair.player2.species)}" alt="" />
+          <img src="${animatedIconUrl(pair.player2.species)}" alt="" />
           <span class="name">${escapeHtml(pair.player2.nickname)}</span>
           <span class="name">Lv.${pair.player2.level}</span>
         </div>
