@@ -30,9 +30,13 @@ local ADDR_MAP_HEADER = addr("gMapHeader")
 local OFFSET_MAP_HEADER_LAYOUT_ID = 0x12
 
 -- Verifies gBaseStats/gExperienceTables and prints why if they fail. These
--- are the only ROM addresses the tracker uses, so this is the place to
--- confirm them before trusting the exp bars on the dashboard.
-local expTablesOk = PokemonReader.configureRomTables(addr("gBaseStats"), addr("gExperienceTables"))
+-- are the only ROM addresses the tracker uses -- and unlike the EWRAM ones
+-- they're language-specific -- so this is the place to confirm them before
+-- trusting the exp bars on the dashboard.
+local romTables = AddressTable.RomDataTables or {}
+local expTablesOk = romTables.gBaseStats and romTables.gExperienceTables
+	and PokemonReader.configureRomTables(
+		tonumber(romTables.gBaseStats, 16), tonumber(romTables.gExperienceTables, 16))
 
 local function reverseEndian32(value)
 	local b1 = value % 256
@@ -48,7 +52,7 @@ local softwareVersion = reverseEndian32(Memory.readdword(0x080000BC))
 print(("gameCode=%08X softwareVersion=%08X"):format(gameCode, softwareVersion))
 print(("expected gameCode=%s softwareVersion=%s (%s)")
 	:format(AddressTable.RomHeader.gameCode, AddressTable.RomHeader.softwareVersion, AddressTable.RomHeader.versionName))
-print(("ROM data tables (gBaseStats/gExperienceTables): %s"):format(expTablesOk and "OK" or "FAILED"))
+print(("ROM data tables (gBaseStats/gExperienceTables): %s"):format(expTablesOk and "OK" or "FAILED/absent"))
 print("")
 
 local framesSincePrint = 999

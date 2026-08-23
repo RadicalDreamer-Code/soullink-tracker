@@ -42,12 +42,21 @@ local function addr(name)
 	return tonumber(hex, 16)
 end
 
+-- ROM data tables are optional -- they only drive the dashboard's exp bars,
+-- so a table that predates them (or omits them) must not stop the tracker.
+local function optionalRomTableAddr(name)
+	local tables = AddressTable.RomDataTables
+	local hex = tables and tables[name]
+	if not hex then return nil end
+	return tonumber(hex, 16)
+end
+
 local ADDR_PSTATS = addr("pstats")
 local ADDR_ESTATS = addr("estats")
 local ADDR_BATTLE_OUTCOME = addr("gBattleOutcome")
 local ADDR_MAP_HEADER = addr("gMapHeader")
-local ADDR_BASE_STATS = addr("gBaseStats")
-local ADDR_EXPERIENCE_TABLES = addr("gExperienceTables")
+local ADDR_BASE_STATS = optionalRomTableAddr("gBaseStats")
+local ADDR_EXPERIENCE_TABLES = optionalRomTableAddr("gExperienceTables")
 
 local OFFSET_MAP_HEADER_LAYOUT_ID = 0x12
 local BATTLE_OUTCOME_CAUGHT = 7
@@ -81,7 +90,9 @@ checkRomHeader()
 
 -- Optional: enables the dashboard's exp bars if the ROM data tables check
 -- out. Prints its own diagnostics and degrades gracefully if they don't.
-if PokemonReader.configureRomTables(ADDR_BASE_STATS, ADDR_EXPERIENCE_TABLES) then
+if not ADDR_BASE_STATS or not ADDR_EXPERIENCE_TABLES then
+	print("No RomDataTables in the address file; experience bars disabled.")
+elseif PokemonReader.configureRomTables(ADDR_BASE_STATS, ADDR_EXPERIENCE_TABLES) then
 	print("ROM data tables OK: experience bars enabled")
 end
 
