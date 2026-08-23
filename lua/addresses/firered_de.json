@@ -1,5 +1,5 @@
 {
-  "_comment": "Curated subset of EWRAM addresses for Pokemon Feuerrote (German Fire Red), sourced from Ironmon-Tracker's Pokemon Feuerrote.json (MIT licensed). EWRAM (02xxxxxx) addresses are identical across all language versions of a game per GameSettings.lua's documented invariant, so these are used directly without RAM-search discovery. RomHeader values are used as a startup sanity check to confirm the loaded ROM matches this table.",
+  "_comment": "Curated subset of addresses for Pokemon Feuerrote (German Fire Red), sourced from Ironmon-Tracker's Pokemon Feuerrote.json (MIT licensed). EWRAM (02xxxxxx) addresses are identical across all language versions of a game per GameSettings.lua's documented invariant, so these are used directly without RAM-search discovery. The ROM (08xxxxxx) addresses under RomDataTables carry NO such guarantee -- ROM layout is language-specific, and these values are correct only for this German revision, which is why PokemonReader.configureRomTables() fingerprints them at startup before trusting them. RomHeader values are used as a startup sanity check to confirm the loaded ROM matches this table.",
   "RomHeader": {
     "gameCode": "42505244",
     "softwareVersion": "00690000",
@@ -11,5 +11,9 @@
     "gPlayerPartyCount": "2024029",
     "gBattleOutcome": "2023E8A",
     "gMapHeader": "2036DFC"
+  },
+  "RomDataTables": {
+    "gBaseStats": "82546A8",
+    "gExperienceTables": "8253A08"
   }
 }
