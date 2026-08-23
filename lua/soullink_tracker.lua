@@ -46,6 +46,8 @@ local ADDR_PSTATS = addr("pstats")
 local ADDR_ESTATS = addr("estats")
 local ADDR_BATTLE_OUTCOME = addr("gBattleOutcome")
 local ADDR_MAP_HEADER = addr("gMapHeader")
+local ADDR_BASE_STATS = addr("gBaseStats")
+local ADDR_EXPERIENCE_TABLES = addr("gExperienceTables")
 
 local OFFSET_MAP_HEADER_LAYOUT_ID = 0x12
 local BATTLE_OUTCOME_CAUGHT = 7
@@ -76,6 +78,12 @@ local function checkRomHeader()
 end
 
 checkRomHeader()
+
+-- Optional: enables the dashboard's exp bars if the ROM data tables check
+-- out. Prints its own diagnostics and degrades gracefully if they don't.
+if PokemonReader.configureRomTables(ADDR_BASE_STATS, ADDR_EXPERIENCE_TABLES) then
+	print("ROM data tables OK: experience bars enabled")
+end
 
 -- ---------------------------------------------------------------------
 -- State

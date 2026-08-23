@@ -8,6 +8,11 @@
   --ok: #57c785;
   --stale: #d9704f;
   --shiny: #f2c94c;
+  --bar-track: #0e0f13;
+  --hp-high: #57c785;
+  --hp-mid: #e8c25a;
+  --hp-low: #e05c4b;
+  --exp-fill: #6fb1ff;
 }
 
 * {
@@ -189,6 +194,42 @@ h2 {
 .pair-card .mon .name {
   font-size: 0.75rem;
   text-align: center;
+}
+
+/* Thin HP/exp readouts under a linked-pair mon. The track is always full
+   width so a near-empty bar still reads as "low" rather than "missing". */
+.pair-card .mon .bar {
+  width: 100%;
+  height: 4px;
+  margin-top: 3px;
+  border-radius: 2px;
+  background: var(--bar-track);
+  overflow: hidden;
+}
+
+.pair-card .mon .bar span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.pair-card .mon .bar.hp.high span { background: var(--hp-high); }
+.pair-card .mon .bar.hp.mid span { background: var(--hp-mid); }
+.pair-card .mon .bar.hp.low span { background: var(--hp-low); }
+.pair-card .mon .bar.exp span { background: var(--exp-fill); }
+
+/* The exp bar is the secondary signal of the two -- thinner, so a glance
+   at a row of cards reads HP first. */
+.pair-card .mon .bar.exp {
+  height: 3px;
+  margin-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pair-card .mon .bar span {
+    transition: none;
+  }
 }
 
 .pair-card .link-icon {

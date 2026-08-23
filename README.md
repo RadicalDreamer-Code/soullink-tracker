@@ -30,6 +30,12 @@ full design writeup (architecture, schemas, phase rationale).
    - Walk around and confirm the printed `mapId`/route name changes when you
      cross route borders, and that your starter/party mon's species, level,
      and nickname print correctly.
+   - Check the `ROM data tables (gBaseStats/gExperienceTables)` line says
+     `OK`. These back the dashboard's exp bars and are the only ROM (rather
+     than RAM) addresses the tracker reads, so they're fingerprinted against
+     known-good values at startup. If it says `FAILED`, everything else
+     still works — you just won't get exp bars until those two addresses are
+     corrected.
    - Once confirmed, you can close this script — it's not used by the
      tracker itself.
 
