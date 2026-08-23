@@ -26,6 +26,38 @@ function eventKey(playerId, personality, type) {
   return `${playerId}:${personality}:${type}`;
 }
 
+// Shared shape for a mon in the route/linked-pair views.
+function monView(mon, isDefeated, inParty) {
+  return {
+    species: mon.species,
+    speciesName: SPECIES_NAMES[mon.species] || `#${mon.species}`,
+    level: mon.level,
+    nickname: mon.nickname,
+    isShiny: mon.isShiny,
+    inParty,
+    isDefeated,
+  };
+}
+
+// Live HP/exp for the dashboard's bars. Only meaningful for a mon actually
+// in the party right now -- a boxed or released mon is rendered from its
+// catch-time event snapshot, which never carried these -- so the fields are
+// omitted rather than zeroed and the dashboard draws no bars for it.
+// expEarned/expSpan are likewise absent whenever the Lua side couldn't
+// verify the ROM exp tables (see PokemonReader.configureRomTables).
+function vitalsView(partyMon) {
+  const vitals = {};
+  if (Number.isFinite(partyMon.maxHp) && partyMon.maxHp > 0) {
+    vitals.currentHp = partyMon.currentHp;
+    vitals.maxHp = partyMon.maxHp;
+  }
+  if (Number.isFinite(partyMon.expSpanThisLevel) && Number.isFinite(partyMon.expEarnedThisLevel)) {
+    vitals.expEarnedThisLevel = partyMon.expEarnedThisLevel;
+    vitals.expSpanThisLevel = partyMon.expSpanThisLevel;
+  }
+  return vitals;
+}
+
 class RunState {
   constructor(runId, runsDir) {
     this.runId = runId;
@@ -216,27 +248,9 @@ class RunState {
         const partyMon = (raw.party || []).find((m) => m.personality === event.pokemon.personality);
         const isDefeated = perPlayerFainted[playerId].has(event.pokemon.personality);
 
-        if (partyMon) {
-          row[playerId] = {
-            species: partyMon.species,
-            speciesName: SPECIES_NAMES[partyMon.species] || `#${partyMon.species}`,
-            level: partyMon.level,
-            nickname: partyMon.nickname,
-            isShiny: partyMon.isShiny,
-            inParty: true,
-            isDefeated,
-          };
-        } else {
-          row[playerId] = {
-            species: event.pokemon.species,
-            speciesName: SPECIES_NAMES[event.pokemon.species] || `#${event.pokemon.species}`,
-            level: event.pokemon.level,
-            nickname: event.pokemon.nickname,
-            isShiny: event.pokemon.isShiny,
-            inParty: false,
-            isDefeated,
-          };
-        }
+        row[playerId] = partyMon
+          ? { ...monView(partyMon, isDefeated, true), ...vitalsView(partyMon) }
+          : monView(event.pokemon, isDefeated, false);
       }
 
       return row;

@@ -38,6 +38,44 @@ function escapeHtml(str) {
   }[c]));
 }
 
+// A thin HP/exp bar pair for a mon that's currently in the party. Both are
+// optional and independently omitted: HP is absent for a boxed/gone mon
+// (rendered from a catch-time snapshot), and exp is absent whenever the Lua
+// side couldn't verify the ROM exp tables. The exact numbers live in the
+// tooltip so the card stays compact.
+function vitalsBars(mon) {
+  const bars = [];
+
+  if (Number.isFinite(mon.currentHp) && mon.maxHp > 0) {
+    const ratio = clamp01(mon.currentHp / mon.maxHp);
+    // Matches the games' own HP-bar thresholds: green > 50% > yellow > 20% > red.
+    const tone = ratio > 0.5 ? 'high' : ratio > 0.2 ? 'mid' : 'low';
+    bars.push(`
+      <div class="bar hp ${tone}" title="HP ${mon.currentHp}/${mon.maxHp}">
+        <span style="width: ${ratio * 100}%"></span>
+      </div>`);
+  }
+
+  if (Number.isFinite(mon.expSpanThisLevel) && Number.isFinite(mon.expEarnedThisLevel)) {
+    // A span of 0 means level 100 -- nothing left to earn, so show it full.
+    const atMaxLevel = mon.expSpanThisLevel === 0;
+    const ratio = atMaxLevel ? 1 : clamp01(mon.expEarnedThisLevel / mon.expSpanThisLevel);
+    const label = atMaxLevel
+      ? 'Max level'
+      : `EXP ${mon.expEarnedThisLevel}/${mon.expSpanThisLevel} to Lv.${mon.level + 1}`;
+    bars.push(`
+      <div class="bar exp" title="${escapeHtml(label)}">
+        <span style="width: ${ratio * 100}%"></span>
+      </div>`);
+  }
+
+  return bars.join('');
+}
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
 function renderRoutes(routes) {
   const rows = document.getElementById('route-rows');
   const empty = document.getElementById('routes-empty');
@@ -73,20 +111,23 @@ function renderLinkedPairs(linkedPairs) {
     <div class="pair-wrap">
       <div class="route-label">${escapeHtml(pair.routeName)}</div>
       <div class="pair-card">
-        <div class="mon${pair.player1.isShiny ? ' shiny' : ''}">
-          <img src="${animatedIconUrl(pair.player1.species)}" alt="" />
-          <span class="name">${escapeHtml(pair.player1.nickname)}</span>
-          <span class="name">Lv.${pair.player1.level}</span>
-        </div>
+        ${pairMon(pair.player1)}
         <span class="link-icon">&#128279;</span>
-        <div class="mon${pair.player2.isShiny ? ' shiny' : ''}">
-          <img src="${animatedIconUrl(pair.player2.species)}" alt="" />
-          <span class="name">${escapeHtml(pair.player2.nickname)}</span>
-          <span class="name">Lv.${pair.player2.level}</span>
-        </div>
+        ${pairMon(pair.player2)}
       </div>
     </div>
   `).join('');
+}
+
+function pairMon(mon) {
+  return `
+    <div class="mon${mon.isShiny ? ' shiny' : ''}">
+      <img src="${animatedIconUrl(mon.species)}" alt="" />
+      <span class="name">${escapeHtml(mon.nickname)}</span>
+      <span class="name">Lv.${mon.level}</span>
+      ${vitalsBars(mon)}
+    </div>
+  `;
 }
 
 // Debug mode: fabricates a full dashboard payload client-side so the UI can
@@ -99,26 +140,42 @@ const DEBUG_SPECIES_NAMES = {
 };
 
 function debugMon(species, nickname, level, opts = {}) {
-  return {
+  const inParty = opts.inParty !== false;
+  const mon = {
     species,
     speciesName: DEBUG_SPECIES_NAMES[species] || `#${species}`,
     level,
     nickname,
     isShiny: !!opts.shiny,
-    inParty: opts.inParty !== false,
+    inParty,
     isDefeated: !!opts.defeated,
   };
+
+  // Only in-party mons carry live vitals, mirroring vitalsView() on the
+  // server. `hp` is a 0..1 fraction and `exp` the fraction into the current
+  // level; omitting `exp` fakes an unverified ROM exp table.
+  if (inParty) {
+    const maxHp = 40 + level * 2;
+    mon.currentHp = Math.round(maxHp * (opts.hp !== undefined ? opts.hp : 1));
+    mon.maxHp = maxHp;
+    if (opts.exp !== undefined) {
+      // Level 100 has no next level, so the server reports a 0 span there.
+      mon.expSpanThisLevel = level >= 100 ? 0 : 1000;
+      mon.expEarnedThisLevel = level >= 100 ? 0 : Math.round(1000 * opts.exp);
+    }
+  }
+  return mon;
 }
 
 function buildDebugState() {
   const routes = [
     // A full 6-slot soul-linked party: both players alive & in-party on every route.
-    { routeName: 'Route 1', player1: debugMon(1, 'Bulby', 14), player2: debugMon(4, 'Charry', 14) },
-    { routeName: 'Route 2', player1: debugMon(7, 'Squirt', 16), player2: debugMon(25, 'Sparky', 15, { shiny: true }) },
-    { routeName: 'Route 3', player1: debugMon(133, 'Eevee', 18, { shiny: true }), player2: debugMon(130, 'Gary', 20) },
-    { routeName: 'Route 4', player1: debugMon(143, 'Snorly', 22), player2: debugMon(149, 'Dennis', 24) },
-    { routeName: 'Route 5', player1: debugMon(131, 'Icy', 21), player2: debugMon(197, 'Umbra', 23) },
-    { routeName: 'Route 6', player1: debugMon(359, 'Absol', 25), player2: debugMon(6, 'Blaze', 26, { shiny: true }) },
+    { routeName: 'Route 1', player1: debugMon(1, 'Bulby', 14, { hp: 1, exp: 0.4 }), player2: debugMon(4, 'Charry', 14, { hp: 0.72, exp: 0.05 }) },
+    { routeName: 'Route 2', player1: debugMon(7, 'Squirt', 16, { hp: 0.45, exp: 0.66 }), player2: debugMon(25, 'Sparky', 15, { shiny: true, hp: 0.12, exp: 0.9 }) },
+    { routeName: 'Route 3', player1: debugMon(133, 'Eevee', 18, { shiny: true, hp: 0.5, exp: 0.99 }), player2: debugMon(130, 'Gary', 20, { hp: 0.21, exp: 0 }) },
+    { routeName: 'Route 4', player1: debugMon(143, 'Snorly', 22, { hp: 0.03, exp: 0.5 }), player2: debugMon(149, 'Dennis', 24, { hp: 1, exp: 1 }) },
+    { routeName: 'Route 5', player1: debugMon(131, 'Icy', 21, { hp: 0.88 }), player2: debugMon(197, 'Umbra', 23, { hp: 0.6 }) }, // no exp: ROM tables unverified
+    { routeName: 'Route 6', player1: debugMon(359, 'Absol', 100, { hp: 1, exp: 0 }), player2: debugMon(6, 'Blaze', 26, { shiny: true, hp: 0.34, exp: 0.25 }) },
     // Extra rows showing other states, appended after the full party above.
     { routeName: 'Route 7 (defeated)', player1: debugMon(19, 'Ratty', 12, { defeated: true, inParty: false }), player2: debugMon(21, 'Peckish', 13) },
     { routeName: 'Route 8 (boxed)', player1: debugMon(16, 'Birdy', 8, { inParty: false }), player2: debugMon(23, 'Snake', 11) },

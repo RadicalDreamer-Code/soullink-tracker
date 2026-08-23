@@ -29,6 +29,11 @@ local ADDR_PSTATS = addr("pstats")
 local ADDR_MAP_HEADER = addr("gMapHeader")
 local OFFSET_MAP_HEADER_LAYOUT_ID = 0x12
 
+-- Verifies gBaseStats/gExperienceTables and prints why if they fail. These
+-- are the only ROM addresses the tracker uses, so this is the place to
+-- confirm them before trusting the exp bars on the dashboard.
+local expTablesOk = PokemonReader.configureRomTables(addr("gBaseStats"), addr("gExperienceTables"))
+
 local function reverseEndian32(value)
 	local b1 = value % 256
 	local b2 = math.floor(value / 256) % 256
@@ -43,6 +48,7 @@ local softwareVersion = reverseEndian32(Memory.readdword(0x080000BC))
 print(("gameCode=%08X softwareVersion=%08X"):format(gameCode, softwareVersion))
 print(("expected gameCode=%s softwareVersion=%s (%s)")
 	:format(AddressTable.RomHeader.gameCode, AddressTable.RomHeader.softwareVersion, AddressTable.RomHeader.versionName))
+print(("ROM data tables (gBaseStats/gExperienceTables): %s"):format(expTablesOk and "OK" or "FAILED"))
 print("")
 
 local framesSincePrint = 999
@@ -67,6 +73,12 @@ while true do
 					tostring(mon.isShiny), mon.currentHp, mon.maxHp))
 			print(("         ivs: hp=%d atk=%d def=%d spa=%d spd=%d spe=%d")
 				:format(mon.ivs.hp, mon.ivs.atk, mon.ivs.def, mon.ivs.spa, mon.ivs.spd, mon.ivs.spe))
+			if mon.expSpanThisLevel then
+				print(("         exp: %d (%d/%d into level %d)")
+					:format(mon.experience, mon.expEarnedThisLevel, mon.expSpanThisLevel, mon.level))
+			else
+				print(("         exp: %d (no level progress -- ROM tables unverified)"):format(mon.experience))
+			end
 		end
 	end
 	emu.frameadvance()
