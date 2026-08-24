@@ -5,7 +5,7 @@ const NATURE_NAMES = require('./nature_names');
 
 const CSV_HEADER = [
   'run_id', 'seq', 'player_id', 'event_type', 'timestamp_utc', 'route_map_id', 'route_name',
-  'species_national_dex_id', 'species_name', 'nickname', 'level', 'nature_id',
+  'species_national_dex_id', 'species_name', 'nickname', 'level', 'nature_id', 'nature_name',
   'is_shiny', 'iv_hp', 'iv_atk', 'iv_def', 'iv_spa', 'iv_spd', 'iv_spe', 'personality_id',
 ].join(',');
 
